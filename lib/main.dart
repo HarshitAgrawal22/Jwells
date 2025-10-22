@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:prof_work/Pages/Login.dart';
+import 'package:prof_work/Pages/Desktop_View/login_page.dart';
+import 'package:prof_work/Pages/Mobile_View/login_page.dart';
+import 'package:prof_work/Pages/Tablet_View/login_page.dart';
+import 'package:prof_work/Utils/Responsive_layout.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,84 +19,196 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: LoginPage(),
+      home: ResponsiveLayout(
+        MobileScaffold: const MobileLoginPage(),
+        TabletScaffold: const TabletLoginPage(),
+        DesktopScaffold: const DesktopLoginPage(),
+      ),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
 
-  final String title;
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
-}
+
+
+
+
+
+
+
+// 1. High-Level Architecture
+
+// Your architecture will need to support:
+
+// Offline data entry: Users can make changes when no internet is available.
+
+// Sync mechanism: Changes are synced with the server when online.
+
+// Durability & reliability: No data loss, even if app crashes or device restarts.
+
+// Cross-platform support: Windows and Android.
+
+// Here’s a conceptual architecture:
+
+// ┌───────────────┐           ┌───────────────┐
+// │   Flutter     │  <----->  │  Local DB     │
+// │   App (UI)    │           │ (SQLite/Drift)│
+// └───────────────┘           └───────────────┘
+//          │                           │
+//          │ Sync API                  │ Offline Storage
+//          │                           │
+//          ▼                           ▼
+//     ┌───────────────┐         ┌───────────────┐
+//     │ Django REST   │         │ Queue/Worker  │
+//     │ Framework     │ <-----> │ for sync      │
+//     └───────────────┘         └───────────────┘
+//          │
+//          ▼
+//     ┌───────────────┐
+//     │ SQL Database  │
+//     │ (PostgreSQL   │
+//     │  or MySQL)    │
+//     └───────────────┘
+
+// 2. Flutter (Frontend) Recommendations
+
+// Since your app must work offline-first:
+
+// Local Database:
+
+// SQLite with Drift (formerly Moor) – works well for structured data, easy queries, strong offline support.
+
+// Alternatively, Hive – key-value, very fast, good for caching.
+
+// State Management:
+
+// Riverpod or Provider – helps in syncing UI state with local DB changes.
+
+// Offline Sync:
+
+// Maintain a queue table in local DB for operations (insert/update/delete).
+
+// Once internet is available, process the queue to sync with the server.
+
+// Connectivity Check:
+
+// Use connectivity_plus package to detect online/offline status.
+
+// Error Handling & Retry:
+
+// Implement exponential backoff for failed sync attempts.
+
+// Background Sync:
+
+// On Android, use WorkManager.
+
+// On Windows, use isolates + periodic timers or background service.
+
+// 3. Backend (Django) Recommendations
+
+// REST API:
+
+// Use Django REST Framework (DRF) for APIs.
+
+// Endpoints must support CRUD with timestamps, e.g., created_at, updated_at, last_modified.
+
+// Conflict Resolution:
+
+// When syncing, the backend must handle conflicts:
+
+// Last-write-wins, or
+
+// Merge strategies if multiple users can edit the same data.
+
+// Authentication & Security:
+
+// JWT Tokens for stateless authentication.
+
+// HTTPS mandatory.
+
+// Optional: refresh tokens to avoid login issues.
+
+// Database:
+
+// PostgreSQL preferred over MySQL for reliability and better concurrency handling.
+
+// Ensure all tables have unique IDs (UUID) to handle offline inserts safely.
+
+// API Design for Syncing:
+
+// Each record should have:
+
+// id (UUID)
+// created_at
+// updated_at
+// is_deleted (for soft delete)
+// version (optional, for conflict resolution)
+
+
+// API endpoints:
+
+// GET /sync?last_synced=<timestamp> → returns updates since last sync
+
+// POST /sync → push local changes to server
+
+// Optional Queue for Scalability:
+
+// Use Celery + Redis to process heavy sync tasks asynchronously.
+
+// 4. Offline-First Sync Strategy
+
+// User adds/updates/deletes a record locally.
+
+// Record is stored in local DB with a sync_status flag.
+
+// When the device is online:
+
+// Flutter app reads unsynced entries.
+
+// Sends them to the server API (POST /sync).
+
+// Server updates database, resolves conflicts, returns latest version.
+
+// Flutter updates local DB with server-confirmed data.
+
+// Tips:
+
+// Use timestamps + UUIDs to avoid duplicate entries.
+
+// Avoid blocking UI during sync → make it background task.
+
+// Log failures for debugging.
+
+// 5. Key Technologies Summary
+// Layer	Technology/Library	Why
+// Frontend	Flutter + Drift/SQLite	Offline-first, cross-platform
+// State mgmt	Riverpod / Provider	Reactive UI updates
+// Sync	Connectivity_plus, WorkManager	Detect online, background sync
+// Backend	Django REST Framework	API support
+// DB	PostgreSQL	ACID, reliability, UUID support
+// Async	Celery + Redis	Heavy tasks, scalable sync
+// Auth	JWT Tokens	Stateless, secure
+// 6. Things You Must Not Forget
+
+// Offline support is not just UI – everything must work without network.
+
+// Conflict resolution – think about edge cases.
+
+// Background sync – do not block the UI.
+
+// Durability – commit to local DB first before sending to server.
+
+// Logging – log sync failures, retries, and errors.
+
+// Versioning – API versioning to avoid breaking clients.
+
+// Testing on weak/no internet – simulate offline scenarios.
+
+// Data size considerations – don’t download too much at once.
+
+// Encryption – sensitive data must be encrypted locally and in transit.
