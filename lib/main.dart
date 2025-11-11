@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:prof_work/DB/JWTDatabase.dart';
 import 'package:prof_work/Pages/Desktop_View/login_page.dart';
 import 'package:prof_work/Pages/Mobile_View/login_page.dart';
 import 'package:prof_work/Pages/Tablet_View/login_page.dart';
 import 'package:prof_work/Utils/Responsive_layout.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // await JWTDatabase.deleteIsarDB();
+  await JWTDatabase.initDB();
+  // TODO: use Provider in the app
   runApp(const MyApp());
 }
 

@@ -1,6 +1,9 @@
 import "package:flutter/material.dart";
-import "package:prof_work/Components/Mobile+View/Button.dart";
-import "package:prof_work/Components/Mobile+View/MyTextField.dart";
+import "package:prof_work/Components/Mobile_View/Button.dart";
+import "package:prof_work/Components/Mobile_View/MyTextField.dart";
+import "package:prof_work/DB/JWTDatabase.dart";
+import 'package:prof_work/Services/Login_func.dart';
+import "package:prof_work/Pages/Mobile_View/Create_company.dart";
 
 class MobileLoginPage extends StatefulWidget {
   const MobileLoginPage({super.key});
@@ -10,45 +13,62 @@ class MobileLoginPage extends StatefulWidget {
 }
 
 class _MobileLoginPageState extends State<MobileLoginPage> {
-  bool _isLoading = false; // 👈 for loader
-
-  void _handleLogin() async {
+  TextEditingController usernameController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  bool _isLoading = false;
+  void _login() async {
+    String result = await Login.authenticate(
+      usernameController.text,
+      passwordController.text,
+    );
     setState(() {
       _isLoading = true;
     });
-    // TODO: Add your login logic here
-    // TODO Disable imputs when button is clicked
+    if (result == "Ok") {
+      // Navigator.pushNamed(context, '/home');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Login Successful!")));
 
-    // Simulate API or authentication process
-    await Future.delayed(const Duration(seconds: 5));
-
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => CreateCompanyPage()),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result)));
+    }
     setState(() {
       _isLoading = false;
     });
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Login Successful!")));
   }
 
-  TextEditingController usernameController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+  void _handleLogin() async {
+    setState(() {
+      _login();
+    });
+    // TODO: Add your login logic here
+    // TODO: Disable inputs when button is clicked
+    // Use Provider for state management
+
+    // Simulate API or authentication process
+  }
+
   @override
   Widget build(BuildContext context) {
     final double height = MediaQuery.of(context).size.height;
     final double width = MediaQuery.of(context).size.width;
-    double ratio = width > height ? width : height;
+    // double ratio = width > height ? width : height;
+    // JWTDatabase.insertUser("harshit", "1810", "own", true);
+    // JWTDatabase.insertOrUpdateToken("access_token", "refresh_token");
     return Scaffold(
       backgroundColor: Colors.grey,
-      // appBar: AppBar(
-      //   title: Text("Welcome Back"),
-      //   centerTitle: true,
-      //   backgroundColor: Colors.grey,
-      // ),
+
       body: Center(
         child: Container(
           padding: EdgeInsets.symmetric(
-            vertical: height / 90,
+            vertical: height / 30,
             horizontal: width / 90,
           ),
           clipBehavior: Clip.hardEdge,
@@ -100,7 +120,7 @@ class _MobileLoginPageState extends State<MobileLoginPage> {
                 ),
                 SizedBox(height: height / 50),
                 MyButton(
-                  height: height / 100 * 70,
+                  height: height / 100 * 50,
                   width: width,
                   item: _isLoading
                       ? CircularProgressIndicator(
@@ -110,29 +130,7 @@ class _MobileLoginPageState extends State<MobileLoginPage> {
                       : const Text("Login"),
                   onPressed: _isLoading ? () {} : _handleLogin,
                 ),
-                // SizedBox(
-                //   width: width * 0.8,
-                //   height: 50,
-                //   child: ElevatedButton(
-                //     onPressed: _isLoading ? null : _handleLogin,
-                //     style: ElevatedButton.styleFrom(
-                //       backgroundColor: Colors.blue,
-                //       shape: RoundedRectangleBorder(
-                //         borderRadius: BorderRadius.circular(8),
-                //       ),
-                //     ),
-                //     child: const SizedBox(
-                //             width: 24,
-                //             height: 24,
-                //             child:
-                //           )
-                //         : const Text(
-                //             "Login",
-                //             style: TextStyle(color: Colors.white, fontSize: 16),
-                //           ),
-                //   ),
-                // ),
-                // SizedBox(height: height / 50),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

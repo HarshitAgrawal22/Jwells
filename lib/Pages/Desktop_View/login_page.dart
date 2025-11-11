@@ -1,6 +1,6 @@
 import "package:flutter/material.dart";
-import 'package:prof_work/Components/Mobile+View/MyTextField.dart';
-import "package:prof_work/Components/Mobile+View/Button.dart";
+import 'package:prof_work/Components/Mobile_View/MyTextField.dart';
+import "package:prof_work/Components/Mobile_View/Button.dart";
 
 class DesktopLoginPage extends StatefulWidget {
   const DesktopLoginPage({super.key});
